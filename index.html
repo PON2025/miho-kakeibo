@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>みほちゃんの家計簿 Pro</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+            background: linear-gradient(180deg, #d4e9f7 0%, #f7d4e9 50%, #f9e0d4 100%);
+            min-height: 100vh;
+            padding: 16px;
+            padding-bottom: 100px;
+            position: relative;
+        }
+        
+        body::before {
+            content: '✦ ✧ ⋆ ✦ ✧ ⋆ ✦';
+            position: fixed;
+            top: 10px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 14px;
+            color: #d68fb8;
+            letter-spacing: 8px;
+            opacity: 0.8;
+            pointer-events: none;
+            z-index: 100;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 24px 0;
+            margin-bottom: 16px;
+        }
+        
+        .header h1 {
+            font-size: 22px;
+            background: linear-gradient(90deg, #5ba3d0 0%, #b86dac 50%, #e88dab 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+        
+        .header .subtitle {
+            font-size: 12px;
+            color: #c478a8;
+            letter-spacing: 3px;
+            font-weight: 500;
+        }
+        
+        /* ナビゲーションタブ */
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            background: rgba(255,255,255,0.5);
+            padding: 8px;
+            border-radius: 16px;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            padding: 12px 8px;
+            border: none;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: transparent;
+            color: #9090a0;
+        }
+        
+        .nav-tab.active {
+            background: linear-gradient(135deg, #e88dab 0%, #d068a8 100%);
+            color: white;
+            box-shadow: 0 3px 10px rgba(208,104,168,0.3);
+        }
+        
+        /* ページコンテナ */
+        .page {
+            display: none;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        /* 月選択 */
+        .month-selector {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 20px;
+            background: rgba(255,255,255,0.7);
+            padding: 12px;
+            border-radius: 16px;
+        }
+        
+        .month-selector button {
+            background: linear-gradient(135deg, #a0c9dc 0%, #7eb8da 100%);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 18px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .month-selector .current-month {
+            font-size: 18px;
+            font-weight: bold;
+            color: #b86dac;
+            min-width: 140px;
+            text-align: center;
+        }
+        
+        /* 今月の合計カード */
+        .summary-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,230,240,0.95) 100%);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px rgba(214,143,184,0.3);
+            text-align: center;
+            border: 2px solid rgba(232,141,171,0.3);
+            position: relative;
+        }
+        
+        .summary-card::before {
+            content: '★';
+            position: absolute;
+            top: 12px;
+            left: 18px;
+            font-size: 18px;
+            color: #f0c860;
+            opacity: 0.8;
+        }
+        
+        .summary-card::after {
+            content: '★';
+            position: absolute;
+            top: 12px;
+            right: 18px;
+            font-size: 18px;
+            color: #70b8e0;
+            opacity: 0.8;
+        }
+        
+        .summary-card .label {
+            font-size: 15px;
+            color: #c478a8;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .summary-card .amount {
+            font-size: 36px;
+            font-weight: bold;
+            background: linear-gradient(90deg, #5ba3d0 0%, #d068a8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .summary-card .yen {
+            font-size: 20px;
+        }
+        
+        /* 人別合計カード */
+        .person-summary-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.93) 0%, rgba(255,245,250,0.93) 100%);
+            border-radius: 20px;
+            padding: 18px;
+            margin-bottom: 16px;
+            box-shadow: 0 3px 15px rgba(184,109,172,0.2);
+            border: 2px solid rgba(184,109,172,0.2);
+        }
+        
+        .person-summary-title {
+            font-size: 14px;
+            color: #b86dac;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+        
+        .person-summary-title::before {
+            content: '👨‍👩‍👧‍👦';
+            font-size: 16px;
+        }
+        
+        .person-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        
+        .person-item {
+            text-align: center;
+            padding: 12px 8px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 12px;
+        }
+        
+        .person-item .name {
+            font-size: 13px;
+            color: #9090a0;
+            margin-bottom: 4px;
+        }
+        
+        .person-item .amount {
+            font-size: 16px;
+            font-weight: bold;
+            color: #b86dac;
+        }
+        
+        /* 項目別合計カード */
+        .breakdown-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.93) 0%, rgba(230,245,255,0.93) 100%);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 15px rgba(91,163,208,0.2);
+            border: 2px solid rgba(91,163,208,0.2);
+        }
+        
+        .breakdown-title {
+            font-size: 14px;
+            color: #7ba8c8;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+        
+        .breakdown-title::before {
+            content: '✧';
+            color: #5ba3d0;
+            font-size: 16px;
+        }
+        
+        .breakdown-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .breakdown-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 14px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 14px;
+        }
+        
+        .breakdown-item .icon {
+            font-size: 20px;
+            width: 28px;
+            text-align: center;
+        }
+        
+        .breakdown-item .info {
+            flex: 1;
+        }
+        
+        .breakdown-item .name {
+            font-size: 12px;
+            color: #9090a0;
+        }
+        
+        .breakdown-item .amount {
+            font-size: 15px;
+            font-weight: 600;
+            color: #b86dac;
+        }
+        
+        .breakdown-empty {
+            text-align: center;
+            padding: 20px;
+            color: #a0b0c0;
+            font-size: 14px;
+            grid-column: 1 / -1;
+        }
+        
+        /* カテゴリボタン */
+        .section-title {
+            font-size: 16px;
+            color: #c478a8;
+            margin-bottom: 14px;
+            padding-left: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+        
+        .section-title::before {
+            content: '⋆';
+            color: #e88dab;
+            font-size: 18px;
+        }
+        
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .category-btn {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,245,250,0.95) 100%);
+            border: 2px solid rgba(232,141,171,0.25);
+            border-radius: 20px;
+            padding: 16px 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 3px 12px rgba(214,143,184,0.18);
+            cursor: pointer;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .category-btn:active {
+            transform: scale(0.97);
+            background: linear-gradient(135deg, #fff0f5 0%, #f0f5ff 100%);
+        }
+        
+        .category-btn .icon {
+            font-size: 28px;
+            width: 38px;
+            text-align: center;
+        }
+        
+        .category-btn .name {
+            font-size: 17px;
+            color: #6080a0;
+            font-weight: 600;
+        }
+        
+        .category-btn.person {
+            background: linear-gradient(135deg, rgba(250,245,255,0.95) 0%, rgba(255,245,250,0.95) 100%);
+            border-color: rgba(184,109,172,0.25);
+        }
+        
+        .category-btn.unknown {
+            background: linear-gradient(135deg, rgba(255,250,245,0.95) 0%, rgba(250,245,255,0.95) 100%);
+            border-color: rgba(200,160,100,0.25);
+        }
+        
+        /* 金額入力 */
+        .input-section {
+            background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(255,245,250,0.98) 100%);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 20px rgba(214,143,184,0.2);
+            border: 2px solid rgba(232,141,171,0.2);
+            display: none;
+        }
+        
+        .input-section.active {
+            display: block;
+        }
+        
+        .selected-category {
+            text-align: center;
+            font-size: 22px;
+            margin-bottom: 16px;
+            color: #b86dac;
+            font-weight: 600;
+        }
+        
+        .amount-display {
+            background: linear-gradient(135deg, #fef8fc 0%, #f8fcfe 100%);
+            border-radius: 16px;
+            padding: 18px;
+            text-align: right;
+            font-size: 34px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            color: #5080a8;
+            border: 2px solid rgba(214,143,184,0.2);
+        }
+        
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        
+        .numpad button {
+            background: linear-gradient(135deg, #fcfeff 0%, #fffcfe 100%);
+            border: 2px solid rgba(214,143,184,0.2);
+            border-radius: 14px;
+            padding: 18px;
+            font-size: 26px;
+            font-weight: 600;
+            color: #6080a0;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        
+        .numpad button:active {
+            background: linear-gradient(135deg, #f8f0f4 0%, #f4f0f8 100%);
+            transform: scale(0.95);
+        }
+        
+        .numpad .delete {
+            background: linear-gradient(135deg, #ffe8f0 0%, #fff0f4 100%);
+            color: #d068a8;
+            border-color: rgba(208,104,168,0.3);
+        }
+        
+        .numpad .clear {
+            background: linear-gradient(135deg, #fff8e8 0%, #fffcf0 100%);
+            color: #c8a060;
+            font-size: 15px;
+            border-color: rgba(200,160,96,0.3);
+        }
+        
+        .save-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #70b8e0 0%, #d068a8 50%, #e88dab 100%);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 18px rgba(208,104,168,0.45);
+        }
+        
+        .save-btn:disabled {
+            background: #c8c8d0;
+            box-shadow: none;
+        }
+        
+        .memo-input {
+            width: 100%;
+            border: 2px solid rgba(214,143,184,0.25);
+            border-radius: 14px;
+            padding: 14px;
+            font-size: 16px;
+            margin-top: 16px;
+            outline: none;
+            background: rgba(255,255,255,0.9);
+        }
+        
+        .memo-input:focus {
+            border-color: #d068a8;
+        }
+        
+        .cancel-btn {
+            width: 100%;
+            background: rgba(180,190,200,0.35);
+            color: #8898a8;
+            border: none;
+            border-radius: 14px;
+            padding: 14px;
+            font-size: 16px;
+            margin-top: 12px;
+            cursor: pointer;
+        }
+        
+        /* 履歴 */
+        .history-section {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(245,250,255,0.95) 100%);
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(91,163,208,0.18);
+            border: 2px solid rgba(91,163,208,0.15);
+        }
+        
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .history-header h2 {
+            font-size: 16px;
+            color: #7ba8c8;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+        
+        .history-header h2::before {
+            content: '✧';
+            color: #5ba3d0;
+        }
+        
+        .clear-history {
+            background: none;
+            border: none;
+            color: #b0b8c8;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        
+        .history-list {
+            max-height: 350px;
+            overflow-y: auto;
+        }
+        
+        .history-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(214,143,184,0.12);
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .history-item .icon {
+            font-size: 24px;
+            margin-right: 12px;
+            width: 34px;
+            text-align: center;
+        }
+        
+        .history-item .details {
+            flex: 1;
+        }
+        
+        .history-item .category-name {
+            font-size: 15px;
+            color: #6080a0;
+            font-weight: 600;
+        }
+        
+        .history-item .memo {
+            font-size: 13px;
+            color: #a0a8b8;
+            margin-top: 3px;
+        }
+        
+        .history-item .date {
+            font-size: 12px;
+            color: #b0b8c8;
+            margin-top: 3px;
+        }
+        
+        .history-item .amount {
+            font-size: 18px;
+            font-weight: bold;
+            color: #d068a8;
+        }
+        
+        .history-item .delete-btn {
+            background: none;
+            border: none;
+            color: #c8d0d8;
+            font-size: 20px;
+            padding: 8px;
+            margin-left: 8px;
+            cursor: pointer;
+        }
+        
+        .empty-history {
+            text-align: center;
+            padding: 40px 20px;
+            color: #a0b0c0;
+        }
+        
+        .empty-history .icon {
+            font-size: 44px;
+            margin-bottom: 12px;
+            opacity: 0.7;
+        }
+        
+        /* 月別一覧ページ */
+        .monthly-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .monthly-item {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,245,250,0.95) 100%);
+            border-radius: 16px;
+            padding: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 3px 12px rgba(214,143,184,0.15);
+            border: 1px solid rgba(232,141,171,0.2);
+        }
+        
+        .monthly-item .month-label {
+            font-size: 17px;
+            font-weight: 600;
+            color: #6080a0;
+        }
+        
+        .monthly-item .month-amount {
+            font-size: 20px;
+            font-weight: bold;
+            color: #d068a8;
+        }
+        
+        .monthly-item .month-detail {
+            font-size: 12px;
+            color: #a0a8b8;
+            margin-top: 4px;
+        }
+        
+        .yearly-total {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(230,245,255,0.95) 100%);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(91,163,208,0.2);
+            border: 2px solid rgba(91,163,208,0.2);
+        }
+        
+        .yearly-total .label {
+            font-size: 14px;
+            color: #7ba8c8;
+            margin-bottom: 8px;
+        }
+        
+        .yearly-total .amount {
+            font-size: 28px;
+            font-weight: bold;
+            color: #5ba3d0;
+        }
+        
+        /* トースト */
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            background: linear-gradient(135deg, rgba(91,163,208,0.95) 0%, rgba(208,104,168,0.95) 100%);
+            color: white;
+            padding: 26px 44px;
+            border-radius: 22px;
+            font-size: 20px;
+            font-weight: 600;
+            opacity: 0;
+            transition: all 0.3s;
+            pointer-events: none;
+            z-index: 1000;
+            box-shadow: 0 8px 32px rgba(208,104,168,0.45);
+        }
+        
+        .toast.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        
+        /* データ管理 */
+        .data-management {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+        }
+        
+        .data-management button {
+            background: #e8e8e8;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 24px;
+            color: #888;
+            font-size: 13px;
+            cursor: pointer;
+            margin: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>✧ みほちゃんの家計簿 Pro ✧</h1>
+        <div class="subtitle">Little Twin Stars</div>
+    </div>
+    
+    <!-- ナビゲーション -->
+    <div class="nav-tabs">
+        <button class="nav-tab active" onclick="showPage('input')">入力</button>
+        <button class="nav-tab" onclick="showPage('history')">きろく</button>
+        <button class="nav-tab" onclick="showPage('monthly')">月べつ</button>
+    </div>
+    
+    <!-- 入力ページ -->
+    <div id="inputPage" class="page active">
+        <!-- 月選択 -->
+        <div class="month-selector">
+            <button onclick="changeMonth(-1)">◀</button>
+            <div class="current-month" id="currentMonth"></div>
+            <button onclick="changeMonth(1)">▶</button>
+        </div>
+        
+        <!-- 今月の合計 -->
+        <div class="summary-card">
+            <div class="label">今月つかったお金</div>
+            <div class="amount"><span id="totalAmount">0</span><span class="yen">円</span></div>
+        </div>
+        
+        <!-- 人別合計 -->
+        <div class="person-summary-card">
+            <div class="person-summary-title">家族にわたしたお金</div>
+            <div class="person-grid">
+                <div class="person-item">
+                    <div class="name">純一</div>
+                    <div class="amount" id="junichiTotal">0円</div>
+                </div>
+                <div class="person-item">
+                    <div class="name">憲伸</div>
+                    <div class="amount" id="kenshinTotal">0円</div>
+                </div>
+                <div class="person-item">
+                    <div class="name">サラ</div>
+                    <div class="amount" id="saraTotal">0円</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 項目別合計 -->
+        <div class="breakdown-card">
+            <div class="breakdown-title">項目べつの合計</div>
+            <div class="breakdown-grid" id="breakdownGrid">
+                <div class="breakdown-empty">まだ記録がないよ ✧</div>
+            </div>
+        </div>
+        
+        <!-- カテゴリ選択 -->
+        <div id="categorySection">
+            <div class="section-title">なにに使った？</div>
+            <div class="category-grid">
+                <button class="category-btn" data-category="food" data-icon="🍙">
+                    <span class="icon">🍙</span>
+                    <span class="name">食費</span>
+                </button>
+                <button class="category-btn" data-category="daily" data-icon="🧴">
+                    <span class="icon">🧴</span>
+                    <span class="name">日用品</span>
+                </button>
+                <button class="category-btn" data-category="rice" data-icon="🍚">
+                    <span class="icon">🍚</span>
+                    <span class="name">お米</span>
+                </button>
+                <button class="category-btn" data-category="eating_out" data-icon="🍽️">
+                    <span class="icon">🍽️</span>
+                    <span class="name">外食費</span>
+                </button>
+                <button class="category-btn" data-category="transport" data-icon="🚃">
+                    <span class="icon">🚃</span>
+                    <span class="name">交通費</span>
+                </button>
+                <button class="category-btn" data-category="medical" data-icon="💊">
+                    <span class="icon">💊</span>
+                    <span class="name">医療費</span>
+                </button>
+                <button class="category-btn person" data-category="junichi" data-icon="👤">
+                    <span class="icon">👤</span>
+                    <span class="name">純一</span>
+                </button>
+                <button class="category-btn person" data-category="kenshin" data-icon="👤">
+                    <span class="icon">👤</span>
+                    <span class="name">憲伸</span>
+                </button>
+                <button class="category-btn person" data-category="sara" data-icon="👧">
+                    <span class="icon">👧</span>
+                    <span class="name">サラ</span>
+                </button>
+                <button class="category-btn unknown" data-category="unknown" data-icon="❓">
+                    <span class="icon">❓</span>
+                    <span class="name">わからない</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 金額入力 -->
+        <div class="input-section" id="inputSection">
+            <div class="selected-category" id="selectedCategory"></div>
+            <div class="amount-display"><span id="inputAmount">0</span>円</div>
+            
+            <div class="numpad">
+                <button onclick="addDigit('1')">1</button>
+                <button onclick="addDigit('2')">2</button>
+                <button onclick="addDigit('3')">3</button>
+                <button onclick="addDigit('4')">4</button>
+                <button onclick="addDigit('5')">5</button>
+                <button onclick="addDigit('6')">6</button>
+                <button onclick="addDigit('7')">7</button>
+                <button onclick="addDigit('8')">8</button>
+                <button onclick="addDigit('9')">9</button>
+                <button class="clear" onclick="clearAmount()">クリア</button>
+                <button onclick="addDigit('0')">0</button>
+                <button class="delete" onclick="deleteDigit()">←</button>
+            </div>
+            
+            <input type="text" class="memo-input" id="memoInput" placeholder="メモ（れい：スーパーで買い物）">
+            
+            <button class="save-btn" id="saveBtn" onclick="saveEntry()">ほぞんする ✧</button>
+            <button class="cancel-btn" onclick="cancelInput()">もどる</button>
+        </div>
+    </div>
+    
+    <!-- 履歴ページ -->
+    <div id="historyPage" class="page">
+        <div class="month-selector">
+            <button onclick="changeMonth(-1)">◀</button>
+            <div class="current-month" id="currentMonthHistory"></div>
+            <button onclick="changeMonth(1)">▶</button>
+        </div>
+        
+        <div class="history-section">
+            <div class="history-header">
+                <h2>きろく一覧</h2>
+                <button class="clear-history" onclick="clearMonthHistory()">この月を消す</button>
+            </div>
+            <div class="history-list" id="historyList"></div>
+        </div>
+    </div>
+    
+    <!-- 月別一覧ページ -->
+    <div id="monthlyPage" class="page">
+        <div class="yearly-total">
+            <div class="label" id="yearLabel">2025年の合計</div>
+            <div class="amount"><span id="yearlyTotal">0</span>円</div>
+        </div>
+        
+        <div class="monthly-list" id="monthlyList"></div>
+        
+        <div class="data-management">
+            <button onclick="exportData()">📤 データを書き出す</button>
+            <button onclick="fullReset()">🔄 全データリセット</button>
+        </div>
+    </div>
+    
+    <!-- トースト -->
+    <div class="toast" id="toast">✧ ほぞんしたよ！</div>
+    
+    <script>
+        // カテゴリ設定
+        const categoryNames = {
+            food: '食費',
+            daily: '日用品',
+            rice: 'お米',
+            eating_out: '外食費',
+            transport: '交通費',
+            medical: '医療費',
+            junichi: '純一',
+            kenshin: '憲伸',
+            sara: 'サラ',
+            unknown: 'わからない'
+        };
+        
+        const categoryIcons = {
+            food: '🍙',
+            daily: '🧴',
+            rice: '🍚',
+            eating_out: '🍽️',
+            transport: '🚃',
+            medical: '💊',
+            junichi: '👤',
+            kenshin: '👤',
+            sara: '👧',
+            unknown: '❓'
+        };
+        
+        const personCategories = ['junichi', 'kenshin', 'sara'];
+        const expenseCategories = ['food', 'daily', 'rice', 'eating_out', 'transport', 'medical', 'unknown'];
+        
+        // 状態管理
+        let currentCategory = null;
+        let currentIcon = null;
+        let currentAmount = '0';
+        let entries = [];
+        let viewingDate = new Date();
+        
+        // 初期化
+        function init() {
+            const saved = localStorage.getItem('mihoKakeiboPro');
+            if (saved) {
+                entries = JSON.parse(saved);
+            }
+            
+            updateMonthDisplay();
+            updateDisplay();
+            
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.addEventListener('click', () => selectCategory(btn));
+            });
+        }
+        
+        // ページ切り替え
+        function showPage(page) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            
+            document.getElementById(page + 'Page').classList.add('active');
+            event.target.classList.add('active');
+            
+            if (page === 'monthly') {
+                updateMonthlyList();
+            }
+            updateDisplay();
+        }
+        
+        // 月変更
+        function changeMonth(delta) {
+            viewingDate.setMonth(viewingDate.getMonth() + delta);
+            updateMonthDisplay();
+            updateDisplay();
+        }
+        
+        // 月表示更新
+        function updateMonthDisplay() {
+            const year = viewingDate.getFullYear();
+            const month = viewingDate.getMonth() + 1;
+            const monthStr = `${year}年${month}月`;
+            
+            document.getElementById('currentMonth').textContent = monthStr;
+            document.getElementById('currentMonthHistory').textContent = monthStr;
+        }
+        
+        // カテゴリ選択
+        function selectCategory(btn) {
+            currentCategory = btn.dataset.category;
+            currentIcon = btn.dataset.icon;
+            currentAmount = '0';
+            
+            document.getElementById('selectedCategory').textContent = 
+                currentIcon + ' ' + categoryNames[currentCategory];
+            document.getElementById('inputAmount').textContent = '0';
+            document.getElementById('memoInput').value = '';
+            
+            document.getElementById('categorySection').style.display = 'none';
+            document.getElementById('inputSection').classList.add('active');
+            
+            updateSaveButton();
+        }
+        
+        // 数字入力
+        function addDigit(digit) {
+            if (currentAmount === '0') {
+                currentAmount = digit;
+            } else if (currentAmount.length < 8) {
+                currentAmount += digit;
+            }
+            document.getElementById('inputAmount').textContent = Number(currentAmount).toLocaleString();
+            updateSaveButton();
+        }
+        
+        function deleteDigit() {
+            if (currentAmount.length > 1) {
+                currentAmount = currentAmount.slice(0, -1);
+            } else {
+                currentAmount = '0';
+            }
+            document.getElementById('inputAmount').textContent = Number(currentAmount).toLocaleString();
+            updateSaveButton();
+        }
+        
+        function clearAmount() {
+            currentAmount = '0';
+            document.getElementById('inputAmount').textContent = '0';
+            updateSaveButton();
+        }
+        
+        function updateSaveButton() {
+            document.getElementById('saveBtn').disabled = currentAmount === '0';
+        }
+        
+        function cancelInput() {
+            document.getElementById('categorySection').style.display = 'block';
+            document.getElementById('inputSection').classList.remove('active');
+            currentCategory = null;
+            currentAmount = '0';
+        }
+        
+        // 保存
+        function saveEntry() {
+            if (currentAmount === '0') return;
+            
+            const entry = {
+                id: Date.now(),
+                category: currentCategory,
+                icon: currentIcon,
+                amount: parseInt(currentAmount),
+                memo: document.getElementById('memoInput').value,
+                date: new Date(viewingDate.getFullYear(), viewingDate.getMonth(), new Date().getDate()).toISOString()
+            };
+            
+            entries.push(entry);
+            entries.sort((a, b) => new Date(b.date) - new Date(a.date));
+            localStorage.setItem('mihoKakeiboPro', JSON.stringify(entries));
+            
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 1500);
+            
+            cancelInput();
+            updateDisplay();
+        }
+        
+        // 表示更新
+        function updateDisplay() {
+            const year = viewingDate.getFullYear();
+            const month = viewingDate.getMonth();
+            
+            const monthEntries = entries.filter(e => {
+                const d = new Date(e.date);
+                return d.getMonth() === month && d.getFullYear() === year;
+            });
+            
+            // 合計
+            const total = monthEntries.reduce((sum, e) => sum + e.amount, 0);
+            document.getElementById('totalAmount').textContent = total.toLocaleString();
+            
+            // 人別合計
+            const junichiTotal = monthEntries.filter(e => e.category === 'junichi').reduce((sum, e) => sum + e.amount, 0);
+            const kenshinTotal = monthEntries.filter(e => e.category === 'kenshin').reduce((sum, e) => sum + e.amount, 0);
+            const saraTotal = monthEntries.filter(e => e.category === 'sara').reduce((sum, e) => sum + e.amount, 0);
+            
+            document.getElementById('junichiTotal').textContent = junichiTotal.toLocaleString() + '円';
+            document.getElementById('kenshinTotal').textContent = kenshinTotal.toLocaleString() + '円';
+            document.getElementById('saraTotal').textContent = saraTotal.toLocaleString() + '円';
+            
+            // 項目別合計（人以外）
+            const categoryTotals = {};
+            monthEntries.forEach(e => {
+                if (!personCategories.includes(e.category)) {
+                    categoryTotals[e.category] = (categoryTotals[e.category] || 0) + e.amount;
+                }
+            });
+            
+            const breakdownGrid = document.getElementById('breakdownGrid');
+            if (Object.keys(categoryTotals).length === 0) {
+                breakdownGrid.innerHTML = '<div class="breakdown-empty">まだ記録がないよ ✧</div>';
+            } else {
+                let html = '';
+                expenseCategories.forEach(cat => {
+                    if (categoryTotals[cat]) {
+                        html += `
+                            <div class="breakdown-item">
+                                <span class="icon">${categoryIcons[cat]}</span>
+                                <div class="info">
+                                    <div class="name">${categoryNames[cat]}</div>
+                                    <div class="amount">${categoryTotals[cat].toLocaleString()}円</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                breakdownGrid.innerHTML = html;
+            }
+            
+            // 履歴
+            const historyList = document.getElementById('historyList');
+            if (monthEntries.length === 0) {
+                historyList.innerHTML = `
+                    <div class="empty-history">
+                        <div class="icon">📝</div>
+                        <div>この月の記録はないよ ✧</div>
+                    </div>
+                `;
+            } else {
+                historyList.innerHTML = monthEntries.map(e => {
+                    const date = new Date(e.date);
+                    const dateStr = `${date.getMonth() + 1}/${date.getDate()}`;
+                    return `
+                        <div class="history-item">
+                            <span class="icon">${e.icon}</span>
+                            <div class="details">
+                                <div class="category-name">${categoryNames[e.category]}</div>
+                                ${e.memo ? `<div class="memo">${e.memo}</div>` : ''}
+                                <div class="date">${dateStr}</div>
+                            </div>
+                            <div class="amount">-${e.amount.toLocaleString()}円</div>
+                            <button class="delete-btn" onclick="deleteEntry(${e.id})">×</button>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+        
+        // 月別一覧更新
+        function updateMonthlyList() {
+            const year = viewingDate.getFullYear();
+            document.getElementById('yearLabel').textContent = `${year}年の合計`;
+            
+            // 年間合計
+            const yearEntries = entries.filter(e => new Date(e.date).getFullYear() === year);
+            const yearTotal = yearEntries.reduce((sum, e) => sum + e.amount, 0);
+            document.getElementById('yearlyTotal').textContent = yearTotal.toLocaleString();
+            
+            // 月別
+            const monthlyList = document.getElementById('monthlyList');
+            let html = '';
+            
+            for (let m = 0; m < 12; m++) {
+                const monthEntries = entries.filter(e => {
+                    const d = new Date(e.date);
+                    return d.getMonth() === m && d.getFullYear() === year;
+                });
+                
+                if (monthEntries.length > 0) {
+                    const total = monthEntries.reduce((sum, e) => sum + e.amount, 0);
+                    const count = monthEntries.length;
+                    
+                    html += `
+                        <div class="monthly-item">
+                            <div>
+                                <div class="month-label">${m + 1}月</div>
+                                <div class="month-detail">${count}件の記録</div>
+                            </div>
+                            <div class="month-amount">${total.toLocaleString()}円</div>
+                        </div>
+                    `;
+                }
+            }
+            
+            if (html === '') {
+                html = '<div class="empty-history"><div class="icon">📅</div><div>この年の記録はないよ ✧</div></div>';
+            }
+            
+            monthlyList.innerHTML = html;
+        }
+        
+        // 削除
+        function deleteEntry(id) {
+            if (confirm('この記録を消しますか？')) {
+                entries = entries.filter(e => e.id !== id);
+                localStorage.setItem('mihoKakeiboPro', JSON.stringify(entries));
+                updateDisplay();
+            }
+        }
+        
+        function clearMonthHistory() {
+            const year = viewingDate.getFullYear();
+            const month = viewingDate.getMonth();
+            
+            if (confirm(`${year}年${month + 1}月の記録をすべて消しますか？`)) {
+                entries = entries.filter(e => {
+                    const d = new Date(e.date);
+                    return d.getMonth() !== month || d.getFullYear() !== year;
+                });
+                localStorage.setItem('mihoKakeiboPro', JSON.stringify(entries));
+                updateDisplay();
+            }
+        }
+        
+        function fullReset() {
+            if (confirm('すべてのデータを消しますか？\n\n※この操作は取り消せません')) {
+                entries = [];
+                localStorage.removeItem('mihoKakeiboPro');
+                updateDisplay();
+                updateMonthlyList();
+                alert('リセットしました ✧');
+            }
+        }
+        
+        // データ書き出し
+        function exportData() {
+            const data = JSON.stringify(entries, null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'miho-kakeibo-backup.json';
+            a.click();
+        }
+        
+        init();
+    </script>
+</body>
+</html>
